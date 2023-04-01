@@ -43,6 +43,12 @@ app.post("/api/persons", (request, response) => {
             error: "Not enough data"
         });
     }
+
+    if (persons.some(p => p.name === request.body.name)) {
+        return response.status(400).json({
+            error: "Name must be unique"
+        });
+    }
     
     const generatedId = Math.floor(Math.random() * 10000);
 

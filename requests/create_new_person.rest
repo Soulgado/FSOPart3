@@ -13,3 +13,12 @@ Content-Type: application/json
 {
     "name": "Billy the Kid"
 }
+
+###
+POST http://localhost:3001/api/persons
+Content-Type: application/json
+
+{
+    "name": "Arto Hellas",
+    "number": "000-123456"
+}
