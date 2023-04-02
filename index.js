@@ -54,16 +54,13 @@ app.get("/info", (request, response) => {
 app.get("/api/persons", (request, response) => {
     Person.find({}).then(result => {
         response.json(result);
+    })
+    .catch(error => {
+        response.status(404).end();
     });
 });
 
-app.post("/api/persons", (request, response) => {
-    if (!request.body.name || !request.body.number) {
-        return response.status(400).json({
-            error: "Not enough data"
-        });
-    }
-
+app.post("/api/persons", (request, response, next) => {
     // if (persons.some(p => p.name === request.body.name)) {
     //     return response.status(400).json({
     //         error: "Name must be unique"
@@ -77,9 +74,11 @@ app.post("/api/persons", (request, response) => {
         number: request.body.number
     });
 
-    newPerson.save().then(savedPerson => {
-        response.json(savedPerson);
-    });
+    newPerson.save()
+        .then(savedPerson => {
+            response.json(savedPerson);
+        })
+        .catch(error => next(error));
 });
 
 app.get("/api/persons/:id", (request, response) => {
@@ -101,18 +100,14 @@ app.delete("/api/persons/:id", (request, response, next) => {
 });
 
 app.put("/api/persons/:id", (request, response, next) => {
-    const body = request.body;
+    const { name, number } = request.body;
 
-    const person = {
-        name: request.body.name,
-        number: request.body.number
-    }
-    
-    console.log(request.params.id, person);
-
-    Person.findByIdAndUpdate(request.params.id, person, { new: true })
+    Person.findByIdAndUpdate(
+        request.params.id,
+        { name, number },
+        { new: true, runValidators: true, context: "query" }
+    )
         .then(updatedPerson => {
-            console.log(updatedPerson);
             response.json(updatedPerson);
         })
         .catch(error => next(error));
@@ -129,6 +124,8 @@ const errorHandler = (error, request, response, next) => {
 
     if (error.name === "CaseError") {
         return response.status(400).send({ error: "Malformatted id" });
+    } else if (error.name === "ValidationError") {
+        return response.status(400).json({ error: error.message });
     }
 
     next(error);
